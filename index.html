@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognitive Agent Flowchart Simulator</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            agent: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              500: '#a78bfa',
+              600: '#8b5cf6',
+              700: '#7c3aed',
+              800: '#6d28d9',
+              950: '#0f0b21',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .code-font {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -40;
+      }
+    }
+    .animate-dash-fast {
+      stroke-dasharray: 8, 4;
+      animation: dash 1s linear infinite;
+    }
+    .animate-dash-slow {
+      stroke-dasharray: 8, 4;
+      animation: dash 2.5s linear infinite;
+    }
+    .glow-purple {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+    }
+    /* Simple custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e1b4b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4c1d95;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-agent-600/30 selection:text-agent-200">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-20 sticky top-0">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase bg-agent-500/15 text-agent-400 rounded-full border border-agent-500/30">Architecture Sandbox</span>
+        <span class="text-xs text-slate-500 font-mono">Source: image_ebb723.png Reference</span>
+      </div>
+      <h1 class="text-xl font-extrabold tracking-tight text-white mt-1 flex items-center gap-2">
+        Cognitive Agent Loop Engine 
+        <span class="text-xs font-mono text-indigo-400 font-normal">[Perceive-Plan-Act-Reflect]</span>
+      </h1>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex bg-slate-900 border border-slate-800 p-0.5 rounded-lg text-xs font-medium">
+        <button onclick="setSimulationPath('success')" id="path-success-btn" class="px-3 py-1.5 rounded-md text-white bg-slate-800 shadow transition-all">
+          Direct Success Run
+        </button>
+        <button onclick="setSimulationPath('loop')" id="path-loop-btn" class="px-3 py-1.5 rounded-md text-slate-400 hover:text-white transition-all">
+          Self-Correction Loop Demo
+        </button>
+      </div>
+      <button onclick="resetSimulation()" class="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition rounded-lg">
+        Reset System
+      </button>
+      <button onclick="triggerAutoSimulation()" id="playBtn" class="px-4 py-1.5 text-xs font-bold text-slate-950 bg-agent-500 hover:bg-agent-600 transition-all rounded-lg flex items-center gap-1.5 shadow-lg shadow-agent-500/10">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span>Run Full Pipeline</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-6 max-w-[1700px] w-full mx-auto">
+    
+    <!-- LEFT PANEL: Dynamic Flowchart Diagram (7 cols) -->
+    <section class="xl:col-span-7 bg-slate-900/40 rounded-2xl border border-slate-800 p-6 flex flex-col justify-between relative overflow-hidden backdrop-blur-sm min-h-[750px]">
+      
+      <!-- Background futuristic grids -->
+      <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e1b4b_1px,transparent_1px),linear-gradient(to_bottom,#1e1b4b_1px,transparent_1px)] bg-[size:24px_24px] opacity-10 pointer-events-none"></div>
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-agent-700/10 rounded-full filter blur-[100px] pointer-events-none"></div>
+
+      <!-- Canvas Header Overlay -->
+      <div class="flex justify-between items-center z-10 mb-4 relative">
+        <div>
+          <h2 class="text-xs font-bold tracking-wider text-slate-400 uppercase">Interactive Cognitive Process Map</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Click any stage to inspect state prompts & configurations</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs bg-slate-950/80 px-3 py-1.5 rounded-full border border-slate-800">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-slate-700 block" id="status-dot-idle"></span>
+            <span class="text-[11px] text-slate-400">Cycle: <span id="cycle-count-badge" class="font-mono text-agent-400 font-bold">1</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Pipeline Area -->
+      <div class="flex-1 flex flex-col items-center justify-start py-8 relative min-h-[600px] z-10">
+        
+        <!-- Input Goal Element -->
+        <div id="node-goal" onclick="inspectNode('goal')" class="group cursor-pointer relative w-64 bg-slate-900/90 border border-slate-800 hover:border-indigo-500/60 transition-all duration-300 p-3.5 rounded-xl shadow-lg flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21m0 0l-.813-5.096L3 15.187m6 5.813a2.25 2.25 0 003 0l6.813-5.813m-6.813 5.813L15 21M1.05 15.918c-.226-.765-.102-1.571.393-2.181l2.52-3.085c.427-.522 1.058-.828 1.728-.828H18.3c.67 0 1.302.306 1.728.828l2.52 3.085c.495.61.62 1.416.393 2.181l-1.353 4.566c-.307 1.036-1.245 1.748-2.324 1.748H4.7c-1.08 0-2.017-.712-2.324-1.748L1.05 15.918z" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[9px] font-mono tracking-widest text-slate-500 uppercase">System Entry</div>
+            <h3 class="font-bold text-xs text-slate-200 truncate group-hover:text-indigo-400 transition-colors">[ Input Goal ]</h3>
+          </div>
+        </div>
+
+        <!-- Arrow: Goal to Perceive -->
+        <div class="h-10 w-0.5 bg-slate-800 relative">
+          <div id="arrow-goal-perceive" class="absolute inset-0 bg-indigo-500 scale-y-0 origin-top transition-transform duration-500"></div>
+          <div class="absolute -bottom-1 -left-[3px] border-t-4 border-t-slate-800 border-x-[4px] border-x-transparent" id="arrowhead-goal-perceive"></div>
+        </div>
+
+        <!-- Node: Perceive -->
+        <div id="node-perceive" onclick="inspectNode('perceive')" class="group cursor-pointer relative w-80 bg-slate-900 border border-slate-800 hover:border-agent-500/60 transition-all duration-300 p-4 rounded-xl shadow-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-slate-200 group-hover:text-agent-300 transition-colors">Perceive</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Parse context, env state, & parameters</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-950/80 text-slate-500 border border-slate-800 group-hover:border-agent-500/30 transition-all">STEP 1</span>
+        </div>
+
+        <!-- Arrow: Perceive to Plan -->
+        <div class="h-10 w-0.5 bg-slate-800 relative">
+          <div id="arrow-perceive-plan" class="absolute inset-0 bg-agent-500 scale-y-0 origin-top transition-transform duration-500"></div>
+          <div class="absolute -bottom-1 -left-[3px] border-t-4 border-t-slate-800 border-x-[4px] border-x-transparent" id="arrowhead-perceive-plan"></div>
+        </div>
+
+        <!-- Node: Plan (Task Decomposition) -->
+        <div id="node-plan" onclick="inspectNode('plan')" class="group cursor-pointer relative w-80 bg-slate-900 border border-slate-800 hover:border-cyan-500/60 transition-all duration-300 p-4 rounded-xl shadow-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h3 class="font-bold text-sm text-slate-200 group-hover:text-cyan-300 transition-colors">Plan</h3>
+                <span class="text-[10px] text-cyan-500 font-mono">(Decomposition)</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Deconstruct into sequential steps</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-950/80 text-slate-500 border border-slate-800 group-hover:border-cyan-500/30 transition-all">STEP 2</span>
+        </div>
+
+        <!-- Arrow: Plan to Act -->
+        <div class="h-10 w-0.5 bg-slate-800 relative">
+          <div id="arrow-plan-act" class="absolute inset-0 bg-agent-500 scale-y-0 origin-top transition-transform duration-500"></div>
+          <div class="absolute -bottom-1 -left-[3px] border-t-4 border-t-slate-800 border-x-[4px] border-x-transparent" id="arrowhead-plan-act"></div>
+        </div>
+
+        <!-- Node: Act (Function Calling) -->
+        <div id="node-act" onclick="inspectNode('act')" class="group cursor-pointer relative w-80 bg-slate-900 border border-slate-800 hover:border-amber-500/60 transition-all duration-300 p-4 rounded-xl shadow-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h3 class="font-bold text-sm text-slate-200 group-hover:text-amber-300 transition-colors">Act</h3>
+                <span class="text-[10px] text-amber-500 font-mono">(Tool Execution)</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Execute tools & write output/code</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-950/80 text-slate-500 border border-slate-800 group-hover:border-amber-500/30 transition-all">STEP 3</span>
+        </div>
+
+        <!-- Arrow: Act to Reflect -->
+        <div class="h-10 w-0.5 bg-slate-800 relative">
+          <div id="arrow-act-reflect" class="absolute inset-0 bg-agent-500 scale-y-0 origin-top transition-transform duration-500"></div>
+          <div class="absolute -bottom-1 -left-[3px] border-t-4 border-t-slate-800 border-x-[4px] border-x-transparent" id="arrowhead-act-reflect"></div>
+        </div>
+
+        <!-- Node: Reflect (Self-Correction Loop) -->
+        <div id="node-reflect" onclick="inspectNode('reflect')" class="group cursor-pointer relative w-80 bg-slate-900 border border-slate-800 hover:border-rose-500/60 transition-all duration-300 p-4 rounded-xl shadow-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h3 class="font-bold text-sm text-slate-200 group-hover:text-rose-300 transition-colors">Reflect</h3>
+                <span class="text-[10px] text-rose-500 font-mono">(Self-Correct)</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Evaluate output quality & constraints</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-950/80 text-slate-500 border border-slate-800 group-hover:border-rose-500/30 transition-all">STEP 4</span>
+        </div>
+
+        <!-- Arrow: Reflect to Goal Fulfilled -->
+        <div class="h-10 w-0.5 bg-slate-800 relative">
+          <div id="arrow-reflect-fulfilled" class="absolute inset-0 bg-agent-500 scale-y-0 origin-top transition-transform duration-500"></div>
+          <div class="absolute -bottom-1 -left-[3px] border-t-4 border-t-slate-800 border-x-[4px] border-x-transparent" id="arrowhead-reflect-fulfilled"></div>
+        </div>
+
+        <!-- Goal Fulfilled & Deliverable Row -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 z-10">
+          <!-- Node: Goal Fulfilled -->
+          <div id="node-fulfilled" onclick="inspectNode('fulfilled')" class="group cursor-pointer relative w-48 bg-slate-900 border border-slate-800 hover:border-emerald-500/60 transition-all p-3.5 rounded-xl shadow-lg flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Condition Met</div>
+              <h3 class="font-bold text-xs text-slate-200 group-hover:text-emerald-400 transition-colors">[ Goal Fulfilled ]</h3>
+            </div>
+          </div>
+
+          <!-- Lateral Vector Arrow: Fulfilled to Commit -->
+          <div class="h-0.5 w-8 bg-slate-800 relative hidden sm:block">
+            <div id="arrow-lateral" class="absolute inset-0 bg-emerald-500 scale-x-0 origin-left transition-transform duration-500"></div>
+          </div>
+
+          <!-- Node: Deliverable (Output/PR/Commit) -->
+          <div id="node-deliver" onclick="inspectNode('deliver')" class="group cursor-pointer relative w-48 bg-slate-900 border border-slate-800 hover:border-emerald-500/60 transition-all p-3.5 rounded-xl shadow-lg flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Deliverable</div>
+              <h3 class="font-bold text-xs text-slate-200 group-hover:text-teal-400 transition-colors">[ Output/PR/Commit ]</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- SVG Connections Overlay (Loopbacks, state updates, errors) -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible" id="flow-svg-overlay">
+          <!-- Definitions for markers and filters -->
+          <defs>
+            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#475569" />
+            </marker>
+            <marker id="arrowhead-active-purple" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#8b5cf6" />
+            </marker>
+            <marker id="arrowhead-active-cyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#06b6d4" />
+            </marker>
+            <marker id="arrowhead-active-rose" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#f43f5e" />
+            </marker>
+            <marker id="arrowhead-active-orange" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#f59e0b" />
+            </marker>
+          </defs>
+
+          <!-- Loop Conduit Path (State Update / Error Stream) -->
+          <!-- Traces from Reflect/Act/Plan to the right side, routes up, and feeds back into the right of Perceive -->
+          <path id="loopback-bg-line" d="M 520, 520 L 640, 520 L 640, 160 L 530, 160" fill="none" stroke="#1e1b4b" stroke-width="2" marker-end="url(#arrowhead)"/>
+          
+          <!-- Animated Active Error/Loop Stream Conduit -->
+          <path id="loopback-active-line" d="M 520, 520 L 640, 520 L 640, 160 L 530, 160" fill="none" stroke="#f43f5e" stroke-width="2.5" class="opacity-0 transition-opacity duration-300" marker-end="url(#arrowhead-active-rose)"/>
+
+          <!-- Lateral Error lines feeding into Conduit from Plan and Act -->
+          <path id="plan-to-conduit" d="M 520, 280 L 640, 280" fill="none" stroke="#1e1b4b" stroke-dasharray="4, 4" stroke-width="1.5" />
+          <path id="plan-to-conduit-active" d="M 520, 280 L 640, 280" fill="none" stroke="#06b6d4" stroke-width="2" class="opacity-0 transition-opacity duration-300" />
+
+          <path id="act-to-conduit" d="M 520, 400 L 640, 400" fill="none" stroke="#1e1b4b" stroke-dasharray="4, 4" stroke-width="1.5" />
+          <path id="act-to-conduit-active" d="M 520, 400 L 640, 400" fill="none" stroke="#f59e0b" stroke-width="2" class="opacity-0 transition-opacity duration-300" />
+        </svg>
+
+        <!-- Dynamic Labels on Loopback Line -->
+        <div id="badge-state-update" class="absolute right-[5%] top-[40%] transform translate-x-1/2 -rotate-90 origin-center pointer-events-none bg-slate-950 px-3 py-1 text-[10px] font-mono font-bold border border-slate-800 text-slate-500 rounded-md transition-all duration-300 z-10">
+          State Update / Error Stream
+        </div>
+
+      </div>
+
+      <!-- Lower Controls / Manual Steps -->
+      <div class="border-t border-slate-800 pt-4 mt-2 flex flex-col sm:flex-row justify-between items-center gap-3 z-10 relative">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400">Manual Playback:</span>
+          <span id="step-label" class="text-xs font-bold font-mono text-agent-400">0 / 6 (Idle)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="prevStep()" class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:text-white text-slate-400 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button onclick="nextStep()" class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:text-white text-slate-400 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Agentic Terminal & State Inspector (5 cols) -->
+    <section class="xl:col-span-5 flex flex-col gap-6">
+      
+      <!-- Interactive Input Goal Console & Runner -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col h-[380px] relative overflow-hidden shadow-2xl">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <span class="flex h-2.5 w-2.5 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <h2 class="text-xs font-bold tracking-wider text-slate-200 uppercase">Interactive Prompt & Trace Terminal</h2>
+          </div>
+          <span class="text-[10px] font-mono text-slate-500">Live VM Trace</span>
+        </div>
+
+        <!-- Custom Input Prompt area -->
+        <div class="mb-3">
+          <label class="block text-[10px] font-mono text-slate-400 mb-1">SET INPUT GOAL</label>
+          <div class="flex gap-2">
+            <input type="text" id="goal-input-field" class="flex-1 bg-slate-950 border border-slate-800 focus:border-agent-500/50 outline-none rounded-lg px-3 py-1.5 text-xs text-slate-300" value="Refactor cache_handler.py to avoid thread contention. Ensure tests pass.">
+            <button onclick="setCustomGoal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg transition border border-slate-700">
+              Apply
+            </button>
+          </div>
+        </div>
+
+        <!-- Simulated Agent Output Window -->
+        <div class="flex-1 flex flex-col min-h-0 bg-slate-950 rounded-xl border border-slate-900 p-3">
+          <div class="flex justify-between items-center mb-1 text-[9px] text-slate-500 font-mono">
+            <span>CONSOLE EXECUTION STREAM</span>
+            <span id="cycle-label">CYCLE 1/1</span>
+          </div>
+          <div id="terminal-screen" class="flex-1 overflow-y-auto text-xs code-font text-slate-300 space-y-1.5 leading-relaxed">
+            <div class="text-slate-500">// Terminal initialized. Click "Run Full Pipeline" to dispatch agent commands...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Component Inspector with Prompt Templates & Codes -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex-1 flex flex-col justify-between min-h-[380px] shadow-2xl relative">
+        <div>
+          <!-- Tab Navigation -->
+          <div class="flex border-b border-slate-800 pb-2 mb-4 gap-4 overflow-x-auto scrollbar-none">
+            <button id="tab-perceive" onclick="inspectNode('perceive')" class="text-xs font-bold text-agent-400 border-b-2 border-agent-500 pb-2 transition-all shrink-0">
+              Perceive
+            </button>
+            <button id="tab-plan" onclick="inspectNode('plan')" class="text-xs font-bold text-slate-400 hover:text-white pb-2 transition-all shrink-0">
+              Plan
+            </button>
+            <button id="tab-act" onclick="inspectNode('act')" class="text-xs font-bold text-slate-400 hover:text-white pb-2 transition-all shrink-0">
+              Act (Execution)
+            </button>
+            <button id="tab-reflect" onclick="inspectNode('reflect')" class="text-xs font-bold text-slate-400 hover:text-white pb-2 transition-all shrink-0">
+              Reflect (Self-Correction)
+            </button>
+          </div>
+
+          <!-- Dynamic Text Inspector Content -->
+          <div id="inspector-body" class="space-y-4">
+            <div>
+              <h3 id="inspect-title" class="text-sm font-extrabold text-white flex items-center gap-2">
+                Perceive State Phase
+              </h3>
+              <p id="inspect-desc" class="text-xs text-slate-400 mt-2 leading-relaxed">
+                The agent parses the current environment workspace, active source file states, memory context bounds, and initial requirements configurations. On failure loops, Perceive ingests Error Streams to adjust next-step variables.
+              </p>
+            </div>
+
+            <div class="bg-slate-950/60 rounded-xl border border-slate-900 p-3">
+              <span id="inspect-badge" class="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block">Prompt Engineering Logic</span>
+              <p id="inspect-rule" class="text-xs text-slate-300 mt-1 leading-relaxed">
+                "Given workspace state and previous trace exceptions: analyze why the constraints failed and map current codebase tokens into memory vectors."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Block View window -->
+        <div class="mt-4">
+          <span class="text-[9px] font-mono text-slate-500 block mb-1">MOCK Python / JSON STRUCTURE</span>
+          <div class="bg-slate-950 border border-slate-900 rounded-lg p-3 overflow-x-auto max-h-[140px] overflow-y-auto">
+            <pre id="inspect-code" class="text-[11px] code-font text-purple-400"># Parse workspace contents
+def perceive_environment(workspace, error_logs=None):
+    current_files = workspace.get_files()
+    system_load = workspace.get_system_state()
+    return {"status": "read", "context": current_files}</pre>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-3 bg-slate-950 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center px-6 gap-2">
+    <span>Cognitive Loop Simulator based on image_ebb723.png layout</span>
+    <span>Robust Multi-cycle Self-correction Architecture Engine</span>
+  </footer>
+
+  <script>
+    // System variables
+    let currentStep = 0;
+    const totalSteps = 6;
+    let autoPlayInterval = null;
+    let currentCycle = 1;
+    let selectedPath = 'success'; // or 'loop'
+    let currentGoalText = "Refactor cache_handler.py to avoid thread contention. Ensure tests pass.";
+
+    // Document database representing the architecture steps
+    const docDb = {
+      goal: {
+        title: "[ Input Goal ]",
+        desc: "The root user prompt representing desired outcomes. It starts the sequence and sets boundary conditions against which final deliverable actions are benchmarked.",
+        rule: "Valid goals must declare explicit outcomes (e.g., 'write functional patch', 'optimize latency below threshold') so reflection blocks can compile objective pass/fail metrics.",
+        code: `goal_payload = {
+    "intent": "refactor_cache",
+    "target_file": "cache_handler.py",
+    "criteria": ["avoid_contention", "tests_passing"]
+}`
+      },
+      perceive: {
+        title: "Perceive State Phase",
+        desc: "The agent checks workspace states, directory indices, files, runtime variables, and previous loop execution logs. It contextualizes the intent by ingesting system parameters.",
+        rule: "State Parser Module: Pulls clean tokens from system buffers. When running corrective cycles, this phase analyzes execution stack traces to update memory buffers.",
+        code: `def perceive_environment(workspace, error_context=None):
+    files = workspace.read_all_files()
+    if error_context:
+        # Ingest state update error stream
+        return {"action": "parse_retry", "diff": error_context}
+    return {"action": "initialize", "active_workspace": files}`
+      },
+      plan: {
+        title: "Plan State Phase (Task Decomposition)",
+        desc: "Decomposes the high-level perceive payload into serialized execution plans. It sets conditional routes and marks dependencies between micro-tasks before sending commands down to execution tools.",
+        rule: "Recursive Tree Planner: Breaks structural requirements into an array of isolated action checkpoints. Helps prevent hallucination during complex logic steps.",
+        code: `def decompose_goal(perceive_payload):
+    tasks = []
+    # Identify code bottlenecks, draft unit test
+    tasks.append({"id": "t1", "tool": "read", "file": "cache_handler.py"})
+    tasks.append({"id": "t2", "tool": "edit", "code_patch": "..."})
+    tasks.append({"id": "t3", "tool": "test", "suite": "test_cache.py"})
+    return tasks`
+      },
+      act: {
+        title: "Act State Phase (Function Calling & Tool Use)",
+        desc: "The execution engine. The agent emits structured tool transactions, runs test scripts, writes modifications directly to simulated work-files, or interfaces with exterior system resources.",
+        rule: "Sandboxed System Actions: All code generations and commands are run under runtime isolation to protect production infrastructure from raw execution failures.",
+        code: `def execute_tasks(task_list):
+    results = []
+    for task in task_list:
+        # Calls target tool via JSON parameters
+        res = call_sandbox_agent_tool(task["tool"], task["args"])
+        results.append(res)
+    return results`
+      },
+      reflect: {
+        title: "Reflect State Phase (Self-Correction Loop)",
+        desc: "Strict verification checkpoint. It parses exit codes, validates schema formats, runs syntax checkers, and evaluates outputs. If tests fail, it reports details to the Error Stream to reboot execution.",
+        rule: "Double Loop Evaluation: Evaluates action result patterns against initial 'Goal' requirements. If errors occur, it triggers an exception payload route back to 'Perceive'.",
+        code: `def verify_output(action_results, criteria):
+    all_passed = evaluate_unit_tests()
+    if not all_passed:
+        # Raises state correction loop path
+        raise SelfCorrectionTrigger(
+            error_stream="Thread contention failed: Deadlock detected at line 42"
+        )
+    return {"status": "fulfilled"}`
+      },
+      fulfilled: {
+        title: "Goal Fulfilled",
+        desc: "The terminal approval boundary. Indicates all verification criteria set inside the 'Input Goal' have returned validation successes. Code is greenlit for downstream production deployment stages.",
+        rule: "Completion Signoff: Closes verification instances, wipes environment state buffers, and compiles final deliverables artifacts.",
+        code: `validation_report = {
+    "goal": "Refactor cache_handler.py",
+    "verification": "SUCCESS",
+    "tests_run": 12,
+    "coverage": "94.8%"
+}`
+      },
+      deliver: {
+        title: "Output / PR / Commit Delivery",
+        desc: "Downstream deploy hooks. Generates git branch logs, commits patch arrays, and opens Pull Requests to target repositories. It communicates completion structures to exterior team APIs.",
+        rule: "Release Gateways: Publishes isolated system updates into repositories, sending Slack/Teams webhook reports to alert human administrators.",
+        code: `git_payload = {
+    "branch": "patch/avoid-contention-cache",
+    "commit_message": "refactored lock parameters inside cache",
+    "pr_body": "Resolves multi-thread thread contention."
+}`
+      }
+    };
+
+    // UI Interactive Selection
+    function inspectNode(nodeId) {
+      // Deactivate all tab highlights
+      document.querySelectorAll('[id^="tab-"]').forEach(el => {
+        el.classList.remove('text-agent-400', 'border-b-2', 'border-agent-500');
+        el.classList.add('text-slate-400');
+      });
+
+      // Highlight corresponding tab if it exists
+      const tab = document.getElementById(`tab-${nodeId}`);
+      if(tab) {
+        tab.classList.add('text-agent-400', 'border-b-2', 'border-agent-500');
+        tab.classList.remove('text-slate-400');
+      }
+
+      // Populate text details
+      const data = docDb[nodeId];
+      if (data) {
+        document.getElementById('inspect-title').textContent = data.title;
+        document.getElementById('inspect-desc').textContent = data.desc;
+        document.getElementById('inspect-rule').textContent = data.rule;
+        document.getElementById('inspect-code').textContent = data.code;
+      }
+    }
+
+    // Adjust dynamic SVG overlay lines on window resize to keep connections sharp
+    function adjustSVGOverlay() {
+      const svg = document.getElementById('flow-svg-overlay');
+      const pNode = document.getElementById('node-perceive');
+      const rNode = document.getElementById('node-reflect');
+      const plNode = document.getElementById('node-plan');
+      const aNode = document.getElementById('node-act');
+
+      if (!pNode || !rNode || !plNode || !aNode || !svg) return;
+
+      const svgRect = svg.getBoundingClientRect();
+      const pRect = pNode.getBoundingClientRect();
+      const rRect = rNode.getBoundingClientRect();
+      const plRect = plNode.getBoundingClientRect();
+      const aRect = aNode.getBoundingClientRect();
+
+      // Calculate coordinates relative to SVG
+      const pRightX = pRect.right - svgRect.left;
+      const pRightY = pRect.top + pRect.height/2 - svgRect.top;
+
+      const rRightX = rRect.right - svgRect.left;
+      const rRightY = rRect.top + rRect.height/2 - svgRect.top;
+
+      const plRightX = plRect.right - svgRect.left;
+      const plRightY = plRect.top + plRect.height/2 - svgRect.top;
+
+      const aRightX = aRect.right - svgRect.left;
+      const aRightY = aRect.top + aRect.height/2 - svgRect.top;
+
+      // Conduit margin to the right
+      const conduitX = Math.max(pRightX, rRightX) + 50;
+
+      // Draw Main Loopback Conduit: Reflect -> Right -> Up -> Perceive
+      const loopBg = document.getElementById('loopback-bg-line');
+      const loopActive = document.getElementById('loopback-active-line');
+      
+      const pathData = `M ${rRightX},${rRightY} L ${conduitX},${rRightY} L ${conduitX},${pRightY} L ${pRightX},${pRightY}`;
+      loopBg.setAttribute('d', pathData);
+      loopActive.setAttribute('d', pathData);
+
+      // Plan conduit link
+      document.getElementById('plan-to-conduit').setAttribute('d', `M ${plRightX},${plRightY} L ${conduitX},${plRightY}`);
+      document.getElementById('plan-to-conduit-active').setAttribute('d', `M ${plRightX},${plRightY} L ${conduitX},${plRightY}`);
+
+      // Act conduit link
+      document.getElementById('act-to-conduit').setAttribute('d', `M ${aRightX},${aRightY} L ${conduitX},${aRightY}`);
+      document.getElementById('act-to-conduit-active').setAttribute('d', `M ${aRightX},${aRightY} L ${conduitX},${aRightY}`);
+
+      // Move text badge
+      const badge = document.getElementById('badge-state-update');
+      badge.style.left = `${conduitX + 20}px`;
+      badge.style.top = `${(pRightY + rRightY) / 2}px`;
+    }
+
+    // Call adjust on layout loads
+    window.addEventListener('resize', adjustSVGOverlay);
+    window.addEventListener('load', () => {
+      adjustSVGOverlay();
+      inspectNode('perceive');
+    });
+    // Double check adjust to avoid potential container loading delays
+    setTimeout(adjustSVGOverlay, 500);
+
+    // Apply custom goal text
+    function setCustomGoal() {
+      const input = document.getElementById('goal-input-field');
+      if (input.value.trim() !== "") {
+        currentGoalText = input.value.trim();
+        const screen = document.getElementById('terminal-screen');
+        screen.innerHTML = `<div class="text-indigo-400 font-semibold">[System Goal Configured] : "${currentGoalText}"</div>` + screen.innerHTML;
+      }
+    }
+
+    // Set simulation run route strategy
+    function setSimulationPath(path) {
+      selectedPath = path;
+      const sBtn = document.getElementById('path-success-btn');
+      const lBtn = document.getElementById('path-loop-btn');
+
+      if (path === 'success') {
+        sBtn.className = "px-3 py-1.5 rounded-md text-white bg-slate-800 shadow transition-all";
+        lBtn.className = "px-3 py-1.5 rounded-md text-slate-400 hover:text-white transition-all";
+      } else {
+        lBtn.className = "px-3 py-1.5 rounded-md text-white bg-slate-800 shadow transition-all";
+        sBtn.className = "px-3 py-1.5 rounded-md text-slate-400 hover:text-white transition-all";
+      }
+      resetSimulation();
+    }
+
+    // Clear & push message logs into simulated dashboard UI
+    function writeTerminal(message, type = "normal", highlightClass = "") {
+      const screen = document.getElementById('terminal-screen');
+      let textClass = "text-slate-300";
+      let prefix = "[INFO]";
+
+      if (type === "success") {
+        textClass = "text-emerald-400 font-semibold";
+        prefix = "✔ [PASS]";
+      } else if (type === "error") {
+        textClass = "text-rose-400 font-semibold";
+        prefix = "✘ [FAIL]";
+      } else if (type === "warning") {
+        textClass = "text-amber-400";
+        prefix = "⚠ [WARN]";
+      } else if (type === "cognitive") {
+        textClass = "text-cyan-400 font-mono";
+        prefix = "⚛ [AGENT]";
+      }
+
+      screen.innerHTML += `<div class="${textClass} ${highlightClass}"><span class="opacity-40 text-slate-500 mr-1">${prefix}</span>${message}</div>`;
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    // Clear Terminal screen
+    function clearTerminal() {
+      document.getElementById('terminal-screen').innerHTML = "";
+    }
+
+    // Reset visual connections and stages
+    function resetSimulation() {
+      currentStep = 0;
+      currentCycle = 1;
+      clearInterval(autoPlayInterval);
+      autoPlayInterval = null;
+
+      document.getElementById('cycle-count-badge').textContent = currentCycle;
+      document.getElementById('cycle-label').textContent = `CYCLE 1/1`;
+      document.getElementById('playBtn').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> <span>Run Full Pipeline</span>`;
+
+      // Clear layout styling classes
+      clearNodeHighlights();
+      clearArrows();
+      clearTerminal();
+      writeTerminal("System and cognitive graphs refreshed. VM trace operational.");
+      updatePlaybackLabel();
+    }
+
+    function clearNodeHighlights() {
+      const resetClass = (id, base) => {
+        const el = document.getElementById(id);
+        el.className = el.className.replace(/border-[a-z]+-500|shadow-[a-z]+-500\/20/g, 'border-slate-800');
+        el.classList.add('border-slate-800');
+      };
+      
+      resetClass('node-goal');
+      resetClass('node-perceive');
+      resetClass('node-plan');
+      resetClass('node-act');
+      resetClass('node-reflect');
+      resetClass('node-fulfilled');
+      resetClass('node-deliver');
+    }
+
+    function clearArrows() {
+      const resetArrow = (id) => {
+        const el = document.getElementById(id);
+        if(el) el.style.transform = 'scaleY(0)';
+      };
+      resetArrow('arrow-goal-perceive');
+      resetArrow('arrow-perceive-plan');
+      resetArrow('arrow-plan-act');
+      resetArrow('arrow-act-reflect');
+      resetArrow('arrow-reflect-fulfilled');
+      
+      const lateral = document.getElementById('arrow-lateral');
+      if (lateral) lateral.style.transform = 'scaleX(0)';
+
+      document.getElementById('loopback-active-line').classList.add('opacity-0');
+      document.getElementById('plan-to-conduit-active').classList.add('opacity-0');
+      document.getElementById('act-to-conduit-active').classList.add('opacity-0');
+    }
+
+    function updatePlaybackLabel() {
+      let labels = [
+        "0 / 6 (Idle)", 
+        "1 / 6 (Goal Configured)", 
+        "2 / 6 (Environment Perceived)", 
+        "3 / 6 (Task Decomposed)", 
+        "4 / 6 (Action Execution)", 
+        "5 / 6 (Self-Reflection Guard)", 
+        "6 / 6 (Goal Satisfied & Released)"
+      ];
+      document.getElementById('step-label').textContent = labels[currentStep];
+    }
+
+    // Sequence engine executing visual transitions
+    function applyStepStates() {
+      clearNodeHighlights();
+      clearArrows();
+      updatePlaybackLabel();
+
+      if (currentStep >= 1) {
+        // Step 1: Goal Loaded
+        document.getElementById('node-goal').classList.remove('border-slate-800');
+        document.getElementById('node-goal').classList.add('border-indigo-500', 'shadow-indigo-500/20');
+        document.getElementById('arrow-goal-perceive').style.transform = 'scaleY(1)';
+        inspectNode('goal');
+      }
+      if (currentStep >= 2) {
+        // Step 2: Perceive Activated
+        document.getElementById('node-perceive').classList.remove('border-slate-800');
+        document.getElementById('node-perceive').classList.add('border-purple-500', 'shadow-purple-500/20');
+        document.getElementById('arrow-perceive-plan').style.transform = 'scaleY(1)';
+        inspectNode('perceive');
+      }
+      if (currentStep >= 3) {
+        // Step 3: Plan Activated
+        document.getElementById('node-plan').classList.remove('border-slate-800');
+        document.getElementById('node-plan').classList.add('border-cyan-500', 'shadow-cyan-500/20');
+        document.getElementById('arrow-plan-act').style.transform = 'scaleY(1)';
+        inspectNode('plan');
+      }
+      if (currentStep >= 4) {
+        // Step 4: Act Activated
+        document.getElementById('node-act').classList.remove('border-slate-800');
+        document.getElementById('node-act').classList.add('border-amber-500', 'shadow-amber-500/20');
+        document.getElementById('arrow-act-reflect').style.transform = 'scaleY(1)';
+        inspectNode('act');
+      }
+      if (currentStep >= 5) {
+        // Step 5: Reflect Activated
+        document.getElementById('node-reflect').classList.remove('border-slate-800');
+        document.getElementById('node-reflect').classList.add('border-rose-500', 'shadow-rose-500/20');
+        inspectNode('reflect');
+      }
+      if (currentStep >= 6) {
+        // Step 6: Goal Met & Delivery Released
+        document.getElementById('arrow-reflect-fulfilled').style.transform = 'scaleY(1)';
+        document.getElementById('node-fulfilled').classList.remove('border-slate-800');
+        document.getElementById('node-fulfilled').classList.add('border-emerald-500', 'shadow-emerald-500/20');
+        
+        // Show lateral transition to Deliverable Output
+        setTimeout(() => {
+          const lat = document.getElementById('arrow-lateral');
+          if (lat) lat.style.transform = 'scaleX(1)';
+          document.getElementById('node-deliver').classList.remove('border-slate-800');
+          document.getElementById('node-deliver').classList.add('border-teal-500', 'shadow-teal-500/20');
+        }, 300);
+        
+        inspectNode('fulfilled');
+      }
+    }
+
+    // Navigation triggers
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        currentStep++;
+        applyStepStates();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyStepStates();
+      }
+    }
+
+    // Comprehensive agent life simulation routine mimicking the Perceive-Plan-Act-Reflect cycles
+    function triggerAutoSimulation() {
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        document.getElementById('playBtn').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> <span>Run Full Pipeline</span>`;
+        return;
+      }
+
+      resetSimulation();
+      writeTerminal(`Initializing Agent Runner Module...`, "warning");
+      document.getElementById('playBtn').innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block mr-1"></span> STOP RUN`;
+      
+      let stepPointer = 1;
+      const stepInterval = 1600;
+
+      autoPlayInterval = setInterval(() => {
+        switch (stepPointer) {
+          case 1:
+            currentStep = 1;
+            applyStepStates();
+            writeTerminal(`Input Goal successfully registered into workspace frame: "${currentGoalText}"`, "normal");
+            stepPointer++;
+            break;
+
+          case 2:
+            currentStep = 2;
+            applyStepStates();
+            writeTerminal(`[Perceive] Scanning source files inside the workspace structure...`, "cognitive");
+            setTimeout(() => {
+              writeTerminal(`[Perceive] Read "cache_handler.py" [SIZE: 2.8KB] and "test_cache.py" [SIZE: 1.1KB]`, "normal");
+            }, 600);
+            stepPointer++;
+            break;
+
+          case 3:
+            currentStep = 3;
+            applyStepStates();
+            writeTerminal(`[Plan] Decomposing optimization requirements into logical actions:`, "cognitive");
+            setTimeout(() => {
+              writeTerminal(`[Plan] -> 1. Identify lock patterns blocking async execution.`);
+              writeTerminal(`[Plan] -> 2. Rewrite heavy synchronization routines to non-blocking re-entrant bounds.`);
+              writeTerminal(`[Plan] -> 3. Execute unit test parameters via sandbox terminal.`);
+            }, 500);
+            stepPointer++;
+            break;
+
+          case 4:
+            currentStep = 4;
+            applyStepStates();
+            writeTerminal(`[Act] Launching virtual environment environment compiler tools...`, "cognitive");
+            setTimeout(() => {
+              if (selectedPath === 'loop' && currentCycle === 1) {
+                writeTerminal(`[Act] Tool Edit applied: Injected threading.Lock inside cache_handler.py.`, "warning");
+                writeTerminal(`[Act] Tool Command ran: 'python -m pytest test_cache.py'`, "normal");
+              } else {
+                writeTerminal(`[Act] Tool Edit applied: Modified locks to concurrent.futures structures.`, "normal");
+                writeTerminal(`[Act] Tool Command ran: 'python -m pytest test_cache.py'`, "normal");
+              }
+            }, 600);
+            stepPointer++;
+            break;
+
+          case 5:
+            currentStep = 5;
+            applyStepStates();
+            writeTerminal(`[Reflect] Assessing correctness of compile parameters against target constraints...`, "cognitive");
+            
+            setTimeout(() => {
+              // Self correction logic route trigger check
+              if (selectedPath === 'loop' && currentCycle === 1) {
+                // FAIL scenario: Route back
+                writeTerminal(`[Reflect] Error detected: Unit tests reported a thread lockup during heavy loads!`, "error");
+                writeTerminal(`[Reflect] Self-Correction triggered. Dispatching exception metrics to State Update/Error Stream...`, "error");
+                
+                // Pause sequence, animate loop line, change states, increment cycle counter, loop back to perceive
+                clearInterval(autoPlayInterval);
+                triggerErrorLoopRouting();
+              } else {
+                // SUCCESS scenario: Finish sequence
+                writeTerminal(`[Reflect] Success: Cache optimization returned with exit-code [0]. 14/14 test cases passed!`, "success");
+                writeTerminal(`[Reflect] Requirements fully satisfied. Passing parameters to Goal Fulfilled boundary.`, "success");
+                stepPointer++;
+              }
+            }, 800);
+            break;
+
+          case 6:
+            currentStep = 6;
+            applyStepStates();
+            writeTerminal(`[Goal Fulfilled] Patch verified successfully. Greenlighting release.`, "success");
+            setTimeout(() => {
+              writeTerminal(`[Deliverable Output] Git changes committed into 'origin/patch/avoid-contention-cache'.`, "success");
+              writeTerminal(`[Deliverable Output] Pull Request opened and dispatched to master repository! Pipeline complete. 🎉`, "cognitive");
+              clearInterval(autoPlayInterval);
+              autoPlayInterval = null;
+              document.getElementById('playBtn').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> <span>Run Full Pipeline</span>`;
+            }, 800);
+            break;
+        }
+      }, stepInterval);
+    }
+
+    // Visual trace for the Error loop redirection
+    function triggerErrorLoopRouting() {
+      // Highlight paths back to Perceive
+      document.getElementById('loopback-active-line').classList.remove('opacity-0');
+      document.getElementById('loopback-active-line').classList.add('animate-dash-fast');
+      document.getElementById('act-to-conduit-active').classList.remove('opacity-0');
+
+      writeTerminal(`[Error Stream] Routing: Redirecting state variables back into Perceive boundary...`, "warning");
+
+      // Animate return visual trigger
+      setTimeout(() => {
+        // Reboot to Step 2: Perceive with cycle 2 parameters
+        currentCycle = 2;
+        document.getElementById('cycle-count-badge').textContent = currentCycle;
+        document.getElementById('cycle-label').textContent = `CYCLE 2/2`;
+        
+        currentStep = 2;
+        applyStepStates();
+
+        document.getElementById('loopback-active-line').classList.add('opacity-0');
+        document.getElementById('loopback-active-line').classList.remove('animate-dash-fast');
+        document.getElementById('act-to-conduit-active').classList.add('opacity-0');
+
+        writeTerminal(`[Perceive] Ingesting corrective execution variables for cycle 2`, "cognitive");
+        writeTerminal(`[Perceive] Identified contention crash at line 42 in cache_handler.py. Readjusting constraint priority.`, "normal");
+
+        // Resume active runner intervals under success criteria
+        setTimeout(() => {
+          let stepPointer = 3;
+          const stepInterval = 1600;
+
+          autoPlayInterval = setInterval(() => {
+            switch (stepPointer) {
+              case 3:
+                currentStep = 3;
+                applyStepStates();
+                writeTerminal(`[Plan] (Cycle 2) Redefining decompose targets:`, "cognitive");
+                writeTerminal(`[Plan] -> Alter strategy: swap global blocking threads to non-blocking re-entrant locks (RLock).`);
+                stepPointer++;
+                break;
+
+              case 4:
+                currentStep = 4;
+                applyStepStates();
+                writeTerminal(`[Act] (Cycle 2) Injecting RLock patch into cache_handler.py...`, "cognitive");
+                setTimeout(() => {
+                  writeTerminal(`[Act] Patch successfully committed. Running verification script...`, "normal");
+                }, 500);
+                stepPointer++;
+                break;
+
+              case 5:
+                currentStep = 5;
+                applyStepStates();
+                writeTerminal(`[Reflect] Running dynamic thread load analysis...`, "cognitive");
+                setTimeout(() => {
+                  writeTerminal(`[Reflect] Validation passed! Codebase execution thread contention verified as resolved.`, "success");
+                  stepPointer++;
+                }, 800);
+                break;
+
+              case 6:
+                currentStep = 6;
+                applyStepStates();
+                writeTerminal(`[Goal Fulfilled] Patch verified successfully. Release greenlit!`, "success");
+                setTimeout(() => {
+                  writeTerminal(`[Deliverable Output] Changes committed into 'origin/patch/avoid-contention-cache'.`, "success");
+                  writeTerminal(`[Deliverable Output] Pull Request opened successfully! Pipeline resolved. 🎉`, "cognitive");
+                  clearInterval(autoPlayInterval);
+                  autoPlayInterval = null;
+                  document.getElementById('playBtn').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> <span>Run Full Pipeline</span>`;
+                }, 800);
+                break;
+            }
+          }, stepInterval);
+
+        }, 1200);
+
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
